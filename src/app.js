@@ -1,62 +1,103 @@
-/**
- * Welcome to Pebble.js!
- *
- * This is where you write your app.
- */
-
 var UI = require('ui');
-var Vector2 = require('vector2');
+var encoded_auth = "";
+var user_name='';
+var master_instance_url = "https://empikinnear.service-now.com/pebblenow_master.do";
+var instance = "";
+var base64 = require('base64');
+//var error = require('error');
+var debug = false;
+var Settings = require('settings');
+var myWork = require('myWork');
+var myGroupsUnassignedWork = require('myGroupsUnassignedWork');
 
-var main = new UI.Card({
-  title: 'Pebble.js',
-  icon: 'images/menu_icon.png',
-  subtitle: 'Hello World!',
-  body: 'Press any button.',
-  subtitleColor: 'indigo', // Named colors
-  bodyColor: '#9a0036' // Hex colors
+
+var timeline = require('timeline');
+//
+//// Push a pin when the app starts
+//Pebble.addEventListener('ready', function() {
+//  // An hour ahead
+//  var date = new Date();
+//  date.setHours(date.getHours() + 1);
+//
+//  // Create the pin
+//  var pin = {
+//    "id": "example-pin-0",
+//    "time": date.toISOString(),
+//    "layout": {
+//      "type": "genericPin",
+//      "title": "Example Pin",
+//      "tinyIcon": "system://images/SCHEDULED_EVENT"
+//    }
+//  };
+//
+//  console.log('Inserting pin in the future: ' + JSON.stringify(pin));
+//
+//  // Push the pin
+//  timeline.insertUserPin(pin, function(responseText) {
+//    console.log('Result: ' + responseText);
+//  });
+//});
+
+var mainMenu = new UI.Menu({
+  sections: [{
+    title: 'K16 Hackzone Menu',
+    items: [{
+      title: 'My Work'
+    }, {
+      title: 'Unassigned Work'
+    }]
+  }]
 });
 
-main.show();
+// Set a configurable with the open callback
+Settings.config(
+  { url: master_instance_url },
+  function(e) {
+    if(debug)
+      console.log('DEBUG opening configurable');
+    // Reset instance to blank before opening the webview
+    Settings.option('instance', '');
+    Settings.option('encoded_auth', '');
+    Settings.option('user_name', '');
+  },
+  function(e) {
+    if(debug)
+      console.log('DEBUG closed configurable');
+    // Show the parsed response
+    if(debug)
+      console.log("DEBUG Settings Response: " + JSON.stringify(e.options));
 
-main.on('click', 'up', function(e) {
-  var menu = new UI.Menu({
-    sections: [{
-      items: [{
-        title: 'Pebble.js',
-        icon: 'images/menu_icon.png',
-        subtitle: 'Can do Menus'
-      }, {
-        title: 'Second Item',
-        subtitle: 'Subtitle Text'
-      }]
-    }]
-  });
-  menu.on('select', function(e) {
+    // Show the raw response if parsing failed
+    if (e.failed && debug) {
+      console.log('DEBUG ' + e.response);
+    }
+    else{
+      Settings.option('instance', e.options.pebble_instance);
+      Settings.option('encoded_auth', base64.encode(e.options.uid + ':' + e.options.pwd));
+      Settings.option('user_name', e.options.my_user_name);
+      if(debug){
+        console.log("DEBUG Set option 'instance': " + e.options.pebble_instance);
+        console.log("DEBUG Set option 'encoded_auth': " + base64.encode(e.options.uid + ':' + e.options.pwd));
+        console.log("DEBUG Set option 'user_name': " + e.options.my_user_name);
+      }
+      mainMenu.show();
+    }
+  }
+);
+
+mainMenu.show();
+
+mainMenu.on('select', function(e) {
+  if(debug){
     console.log('Selected item #' + e.itemIndex + ' of section #' + e.sectionIndex);
     console.log('The item is titled "' + e.item.title + '"');
-  });
-  menu.show();
-});
-
-main.on('click', 'select', function(e) {
-  var wind = new UI.Window({
-    fullscreen: true,
-  });
-  var textfield = new UI.Text({
-    position: new Vector2(0, 65),
-    size: new Vector2(144, 30),
-    font: 'gothic-24-bold',
-    text: 'Text Anywhere!',
-    textAlign: 'center'
-  });
-  wind.add(textfield);
-  wind.show();
-});
-
-main.on('click', 'down', function(e) {
-  var card = new UI.Card();
-  card.title('A Card');
-  card.subtitle('Is a Window');
-  card.body('The simplest window type in Pebble.js.');
-  card.show();
+  }
+  
+  if(e.itemIndex===0){
+    myWork.show(instance,encoded_auth,user_name);
+  }
+  if(e.itemIndex===1){
+    myGroupsUnassignedWork.show(instance,encoded_auth,user_name);
+  }
+  
 });
