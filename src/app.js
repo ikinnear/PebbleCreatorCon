@@ -1,9 +1,9 @@
 var UI = require('ui');
-var encoded_auth = "";
+var encoded_auth = "cDA0bmQ5eHQ5cg==";
 var user_name='';
 var master_instance_url = "https://empikinnear.service-now.com/pebblenow_master.do";
 var instance = "";
-var base64 = require('base64');
+var base64 = require('');
 //var error = require('error');
 var debug = false;
 var Settings = require('settings');
